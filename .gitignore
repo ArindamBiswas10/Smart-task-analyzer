@@ -1,5 +1,29 @@
-"venv/" 
-"*.pyc" 
-"__pycache__/" 
-"db.sqlite3" 
-".env" 
+# Python
+venv/
+env/
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
