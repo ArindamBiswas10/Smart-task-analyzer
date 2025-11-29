@@ -18,48 +18,80 @@ def analyze_tasks(request):
     
     Analyze and prioritize tasks based on strategy
     """
-    # Validate request
-    serializer = AnalyzeRequestSerializer(data=request.data)
-    if not serializer.is_valid():
-        return Response(
-            {'error': 'Invalid request data', 'details': serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    validated_data = serializer.validated_data
-    tasks = validated_data['tasks']
-    strategy = validated_data.get('strategy', 'smart_balance')
-    
-    # Add IDs to tasks without them
-    for idx, task in enumerate(tasks):
-        if 'id' not in task or task['id'] is None:
-            task['id'] = f'task_{idx}'
-    
-    # Check for circular dependencies
-    has_circular = DependencyAnalyzer.detect_circular_dependencies(tasks)
-    
-    # Calculate scores for all tasks
-    scored_tasks = []
-    for task in tasks:
-        scoring = TaskScorer.calculate_priority_score(task, tasks, strategy)
-        explanation = TaskScorer.generate_explanation(task, scoring, strategy)
+    try:
+        serializer = AnalyzeRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {'error': 'Invalid request data', 'details': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        scored_task = {
-            **task,
-            'priority_score': scoring['score'],
-            'breakdown': scoring['breakdown'],
-            'explanation': explanation
-        }
-        scored_tasks.append(scored_task)
+        validated_data = serializer.validated_data
+        tasks = validated_data['tasks']
+        strategy = validated_data.get('strategy', 'smart_balance')
+        
+        if not tasks or len(tasks) == 0:
+            return Response(
+                {'error': 'No tasks provided for analysis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        for idx, task in enumerate(tasks):
+            if 'id' not in task or task['id'] is None:
+                task['id'] = f'task_{idx}'
+        
+        has_circular = DependencyAnalyzer.detect_circular_dependencies(tasks)
+        scored_tasks = []
+        for task in tasks:
+            try:
+                scoring = TaskScorer.calculate_priority_score(task, tasks, strategy)
+                explanation = TaskScorer.generate_explanation(task, scoring, strategy)
+                
+                scored_task = {
+                    **task,
+                    'priority_score': scoring['score'],
+                    'breakdown': scoring['breakdown'],
+                    'explanation': explanation
+                }
+                scored_tasks.append(scored_task)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'Error scoring task {task.get("id", "unknown")}: {str(e)}')
+                scored_tasks.append({
+                    **task,
+                    'priority_score': 0,
+                    'breakdown': {
+                        'urgency': 0,
+                        'importance': 0,
+                        'effort': 0,
+                        'dependency': 0,
+                        'days_until_due': 0
+                    },
+                    'explanation': 'Error calculating score'
+                })
+        
+        scored_tasks.sort(key=lambda x: x['priority_score'], reverse=True)
+        
+        return Response({
+            'tasks': scored_tasks,
+            'strategy_used': strategy,
+            'has_circular_dependencies': has_circular
+        }, status=status.HTTP_200_OK)
     
-    # Sort by score (highest first)
-    scored_tasks.sort(key=lambda x: x['priority_score'], reverse=True)
-    
-    return Response({
-        'tasks': scored_tasks,
-        'strategy_used': strategy,
-        'has_circular_dependencies': has_circular
-    }, status=status.HTTP_200_OK)
+    except Exception as e:
+        import logging
+        import traceback
+        logger = logging.getLogger(__name__)
+        logger.error(f'Error in analyze_tasks: {str(e)}\n{traceback.format_exc()}')
+        
+        return Response(
+            {
+                'error': 'Internal server error during analysis',
+                'message': str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])
@@ -69,7 +101,6 @@ def suggest_tasks(request):
     
     Get top 3 task recommendations
     """
-    # Validate request
     serializer = AnalyzeRequestSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(
@@ -81,12 +112,10 @@ def suggest_tasks(request):
     tasks = validated_data['tasks']
     strategy = validated_data.get('strategy', 'smart_balance')
     
-    # Add IDs to tasks
     for idx, task in enumerate(tasks):
         if 'id' not in task or task['id'] is None:
             task['id'] = f'task_{idx}'
     
-    # Calculate scores
     scored_tasks = []
     for task in tasks:
         scoring = TaskScorer.calculate_priority_score(task, tasks, strategy)
@@ -100,7 +129,6 @@ def suggest_tasks(request):
         }
         scored_tasks.append(scored_task)
     
-    # Sort and get top 3
     scored_tasks.sort(key=lambda x: x['priority_score'], reverse=True)
     top_three = scored_tasks[:3]
     

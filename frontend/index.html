@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Task Analyzer - AI-Powered Prioritization</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="confetti-canvas"></canvas>
+    
+    <div class="container">
+        <!-- Enhanced Header with Stats -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-main">
+                    <div class="logo">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                            <circle cx="20" cy="20" r="18" fill="url(#gradient1)" opacity="0.2"/>
+                            <path d="M20 8L24 16L32 18L26 24L28 32L20 28L12 32L14 24L8 18L16 16L20 8Z" fill="url(#gradient1)"/>
+                            <defs>
+                                <linearGradient id="gradient1" x1="8" y1="8" x2="32" y2="32">
+                                    <stop offset="0%" stop-color="#667eea"/>
+                                    <stop offset="100%" stop-color="#764ba2"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="header-text">
+                        <h1>Smart Task Analyzer</h1>
+                        <p>AI-powered intelligent task prioritization system</p>
+                    </div>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-tasks">0</div>
+                        <div class="stat-label">Total Tasks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="analyzed-count">0</div>
+                        <div class="stat-label">Analyzed</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Alert/Error Messages -->
+        <div id="alert-container"></div>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Left Column: Input Section -->
+            <div class="card input-section">
+                <div class="card-header">
+                    <h2>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
+                        </svg>
+                        Add New Task
+                    </h2>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Task Form -->
+                    <div class="form-group">
+                        <label for="title">
+                            Task Title
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="title" 
+                            placeholder="e.g., Fix login bug on production server"
+                            class="input-field"
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="due_date">
+                                Due Date
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="date" 
+                                id="due_date"
+                                class="input-field"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="estimated_hours">
+                                Est. Hours
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="estimated_hours" 
+                                step="0.5" 
+                                placeholder="3.5"
+                                class="input-field"
+                                min="0.1"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="importance">
+                            Importance Level: 
+                            <span class="importance-badge" id="importance-value">5</span>
+                        </label>
+                        <div class="slider-container">
+                            <input 
+                                type="range" 
+                                id="importance" 
+                                min="1" 
+                                max="10" 
+                                value="5"
+                                class="slider"
+                            >
+                            <div class="slider-labels">
+                                <span>Low</span>
+                                <span>Medium</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dependencies">
+                            Dependencies 
+                            <span class="help-text">(optional)</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="dependencies" 
+                            placeholder="task_1, task_2"
+                            class="input-field"
+                        >
+                        <small class="field-hint">Comma-separated task IDs this task depends on</small>
+                    </div>
+
+                    <button class="btn btn-primary btn-large" onclick="addTask()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
+                        </svg>
+                        Add Task to Queue
+                    </button>
+
+                    <!-- Task Queue Display -->
+                    <div id="task-queue" class="task-queue hidden">
+                        <div class="queue-header">
+                            <h3>Task Queue</h3>
+                            <button class="btn-text" onclick="clearAllTasks()">Clear All</button>
+                        </div>
+                        <div id="queue-list"></div>
+                    </div>
+
+                    <!-- JSON Import Section -->
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+
+                    <div class="json-import">
+                        <label for="json-input">Bulk Import (JSON)</label>
+                        <textarea 
+                            id="json-input" 
+                            rows="4" 
+                            placeholder='[{"title": "Task 1", "due_date": "2025-11-30", "estimated_hours": 3, "importance": 8, "dependencies": []}]'
+                            class="textarea-field"
+                        ></textarea>
+                        <button class="btn btn-secondary" onclick="bulkAddTasks()">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                            Import from JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Strategy & Analysis -->
+            <div class="card strategy-section">
+                <div class="card-header">
+                    <h2>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                        </svg>
+                        Prioritization Strategy
+                    </h2>
+                </div>
+
+                <div class="card-body">
+                    <div class="strategy-options">
+                        <label class="strategy-card">
+                            <input type="radio" name="strategy" value="smart_balance" checked>
+                            <div class="strategy-content">
+                                <div class="strategy-icon">⚖️</div>
+                                <div class="strategy-info">
+                                    <strong>Smart Balance</strong>
+                                    <p>Optimal mix of all factors for balanced productivity</p>
+                                    <div class="strategy-weights">
+                                        <span class="weight-tag">Urgency 35%</span>
+                                        <span class="weight-tag">Impact 30%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="strategy-card">
+                            <input type="radio" name="strategy" value="fastest_wins">
+                            <div class="strategy-content">
+                                <div class="strategy-icon">⚡</div>
+                                <div class="strategy-info">
+                                    <strong>Fastest Wins</strong>
+                                    <p>Knock out quick tasks to build momentum</p>
+                                    <div class="strategy-weights">
+                                        <span class="weight-tag">Effort 60%</span>
+                                        <span class="weight-tag">Speed Focus</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="strategy-card">
+                            <input type="radio" name="strategy" value="high_impact">
+                            <div class="strategy-content">
+                                <div class="strategy-icon">🎯</div>
+                                <div class="strategy-info">
+                                    <strong>High Impact</strong>
+                                    <p>Focus on tasks that matter most</p>
+                                    <div class="strategy-weights">
+                                        <span class="weight-tag">Importance 70%</span>
+                                        <span class="weight-tag">Value Driven</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="strategy-card">
+                            <input type="radio" name="strategy" value="deadline_driven">
+                            <div class="strategy-content">
+                                <div class="strategy-icon">⏰</div>
+                                <div class="strategy-info">
+                                    <strong>Deadline Driven</strong>
+                                    <p>Tackle urgent tasks before they're overdue</p>
+                                    <div class="strategy-weights">
+                                        <span class="weight-tag">Urgency 70%</span>
+                                        <span class="weight-tag">Time Critical</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <button class="btn btn-analyze" onclick="analyzeTasks()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                        </svg>
+                        <span id="analyze-btn-text">Analyze Tasks</span>
+                    </button>
+
+                    <!-- Top 3 Recommendations -->
+                    <div id="top-three-section" class="top-three-section hidden">
+                        <div class="top-three-header">
+                            <h3>🏆 Top 3 Priority Tasks</h3>
+                            <p>Focus on these for maximum impact</p>
+                        </div>
+                        <div id="top-three-list" class="top-three-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="card results-section hidden">
+            <div class="card-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Analysis Results
+                </h2>
+                <div class="results-actions">
+                    <button class="btn-icon" onclick="exportResults()" title="Export as JSON">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="results-list"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built with ❤️ using Django & Vanilla JavaScript | Smart Task Analyzer v1.0</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
