@@ -593,4 +593,4 @@ For questions about this project, please reach out via GitHub issues or [arindom
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: November 2025
