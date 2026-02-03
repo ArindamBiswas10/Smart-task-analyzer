@@ -15,7 +15,7 @@ An intelligent task prioritization system that uses multi-factor algorithmic sco
 - **Circular Dependency Detection**: Uses DFS algorithm to identify invalid task relationships
 - **Interactive Frontend**: Clean, modern UI with real-time task queue management
 - **Top 3 Recommendations**: Highlights the most critical tasks for immediate action
-- **RESTful API**: Well-documented endpoints for task analysis and management
+- **RESTful API**: Well-documented endpoints for task analysis and management to hrlp users
 - **Comprehensive Testing**: 15+ unit tests covering algorithm logic and edge cases
 
 ---
